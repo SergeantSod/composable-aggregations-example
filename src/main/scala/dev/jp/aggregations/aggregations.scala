@@ -1,8 +1,9 @@
 package dev.jp.aggregations
 
-import cats.implicits._
 import cats._
-import fs2.{Stream, Compiler}
+import cats.implicits._
+import fs2.Compiler
+import fs2.Stream
 
 import Numeric.Implicits._
 import Fractional.Implicits._
@@ -31,6 +32,11 @@ trait Run[TIn, TOut]:
 
 object Aggregation:
 
+  final def fold[TIn, TOut](initial: => TOut)(
+      foldStep: (TOut, TIn) => TOut
+  ): Aggregation[TIn, TOut] =
+    () => FoldRun(initial, foldStep)
+
   private class FoldRun[TIn, TOut](
       current: TOut,
       foldStep: (TOut, TIn) => TOut
@@ -38,11 +44,6 @@ object Aggregation:
     def consume(element: TIn): Run[TIn, TOut] =
       FoldRun(foldStep(current, element), foldStep)
     def result(): TOut = current
-
-  final def fold[TIn, TOut](initial: => TOut)(
-      foldStep: (TOut, TIn) => TOut
-  ): Aggregation[TIn, TOut] =
-    () => FoldRun(initial, foldStep)
 
   final def count[T]: Aggregation[T, Int] = fold(0) { (current, _) =>
     current + 1

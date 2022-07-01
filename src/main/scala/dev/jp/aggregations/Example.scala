@@ -1,21 +1,22 @@
 package dev.jp.aggregations
 
-//TODO: Organize imports
-import cats.implicits._
 import cats._
+import cats.effect.ExitCode
 import cats.effect.IO
+import cats.effect.IOApp
+import cats.implicits._
+import fs2.Pipe
+import fs2.io.file.Files
+import fs2.io.file.Path
+import fs2.text
+import io.circe.Decoder
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.parser.decode
-import fs2.io.file.{Files, Path}
-import fs2.text
-import fs2.Pipe
+
+import scala.util.Try
 
 import Aggregation._
-import io.circe.Decoder
-import cats.effect.IOApp
-import cats.effect.ExitCode
-import scala.util.Try
 
 enum Department {
   case Engineering, HumanResources, Legal, Sales
