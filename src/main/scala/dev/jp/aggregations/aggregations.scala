@@ -45,6 +45,9 @@ object Aggregation:
       FoldRun(foldStep(current, element), foldStep)
     def result(): TOut = current
 
+  final def foldM[M](using m: Monoid[M]): Aggregation[M, M] =
+    fold(m.empty)(m.combine)
+
   final def count[T]: Aggregation[T, Int] = fold(0) { (current, _) =>
     current + 1
   }
@@ -54,12 +57,8 @@ object Aggregation:
       s + next
     }
 
-  final def foldMap[TIn, M: Monoid](
-      map: TIn => M
-  ): Aggregation[TIn, M] =
-    fold(Monoid.empty[M]) { (current, next) =>
-      current |+| map(next)
-    }
+  final def foldMap[TIn, M: Monoid](map: TIn => M): Aggregation[TIn, M] =
+    foldM[M].contramap(map)
 
   final def mean[T: Numeric: Fractional]: Aggregation[T, Option[T]] =
     (sum[T], count) mapN { (theSum, theCount) =>
