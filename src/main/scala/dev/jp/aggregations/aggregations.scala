@@ -8,10 +8,15 @@ import fs2.Stream
 import Numeric.Implicits._
 import Fractional.Implicits._
 
-//TODO: Add some scaladoc for the more important classes
+/** A resuable, composable object that can aggregate a stream of values of type
+  * `TIn` into a result of type `TOut`
+  */
 trait Aggregation[TIn, TOut]:
+
+  /** Starts a run across a stream */
   def start(): Run[TIn, TOut]
 
+  /** Runs this aggregation over a Stream */
   def apply[F[_]: Functor](
       stream: Stream[F, TIn]
   )(using Compiler[F, F]): F[TOut] =
@@ -26,6 +31,9 @@ trait Aggregation[TIn, TOut]:
       f: B => TIn
   ): Aggregation[B, TOut] = () => Aggregation.ContramapRun(f, start())
 
+/** A running aggregation that may consume more elements of type `TIn` from a
+  * stream or produce a result of type `TOut` at the end of the stream.
+  */
 trait Run[TIn, TOut]:
   def consume(element: TIn): Run[TIn, TOut]
   def result(): TOut
