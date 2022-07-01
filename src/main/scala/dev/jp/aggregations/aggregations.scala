@@ -71,7 +71,6 @@ object Aggregation:
   final def countOccurencesOf[T]: Aggregation[T, Map[T, Int]] =
     foldMap(occurence => Map(occurence -> 1))
 
-  //TODO: Check if we can write the type lambdas more succinctly
   given [TIn]: Applicative[[TOut] =>> Aggregation[TIn, TOut]] with
 
     def pure[A](x: A): Aggregation[TIn, A] = () => PureRun(x)
