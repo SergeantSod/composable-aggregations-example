@@ -18,15 +18,6 @@ import scala.util.Try
 
 import Aggregation._
 
-enum Department {
-  case Engineering, HumanResources, Legal, Sales
-}
-
-object Department:
-  given Decoder[Department] = Decoder[String].emapTry { raw =>
-    Try { Department.valueOf(raw) }
-  }
-
 case class Employee(
     firstName: String,
     lastName: String,
@@ -37,8 +28,17 @@ case class Employee(
 object Employee:
   given Decoder[Employee] = deriveDecoder[Employee]
 
+enum Department {
+  case Engineering, HumanResources, Legal, Sales
+}
+
+object Department:
+  given Decoder[Department] = Decoder[String].emapTry { raw =>
+    Try { Department.valueOf(raw) }
+  }
+
 case class Statistics(
-    count: Int,
+    numberOfEmployees: Int,
     totalSalary: Double,
     averageSalary: Option[Double],
     departmentSizes: Map[Department, Int]
