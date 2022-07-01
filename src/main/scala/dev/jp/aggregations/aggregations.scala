@@ -7,12 +7,9 @@ import fs2.{Stream, Compiler}
 import Numeric.Implicits._
 import Fractional.Implicits._
 
+//TODO: Add some scaladoc for the more important classes
 trait Aggregation[TIn, TOut]:
-  def start(): AggregationRun[TIn, TOut]
-
-  def contramap[B](
-      f: B => TIn
-  ): Aggregation[B, TOut] = () => Aggregation.ContraMapRun(f, start())
+  def start(): Run[TIn, TOut]
 
   def apply[F[_]: Functor](
       stream: Stream[F, TIn]
@@ -21,8 +18,15 @@ trait Aggregation[TIn, TOut]:
       .fold(start()) { _.consume(_) }
       .map(_.result())
 
-trait AggregationRun[TIn, TOut]:
-  def consume(element: TIn): AggregationRun[TIn, TOut]
+  // We define this here instead of relying on cats' extension methods,
+  // because Scala has some trouble deriving those
+  // (probably due to the additional type parameter)
+  def contramap[B](
+      f: B => TIn
+  ): Aggregation[B, TOut] = () => Aggregation.ContramapRun(f, start())
+
+trait Run[TIn, TOut]:
+  def consume(element: TIn): Run[TIn, TOut]
   def result(): TOut
 
 object Aggregation:
@@ -30,8 +34,8 @@ object Aggregation:
   private class FoldRun[TIn, TOut](
       current: TOut,
       foldStep: (TOut, TIn) => TOut
-  ) extends AggregationRun[TIn, TOut]:
-    def consume(element: TIn): AggregationRun[TIn, TOut] =
+  ) extends Run[TIn, TOut]:
+    def consume(element: TIn): Run[TIn, TOut] =
       FoldRun(foldStep(current, element), foldStep)
     def result(): TOut = current
 
@@ -56,34 +60,16 @@ object Aggregation:
       current |+| map(next)
     }
 
-  final def countOccurencesOf[T]: Aggregation[T, Map[T, Int]] =
-    foldMap(occurence => Map(occurence -> 1))
-
   final def mean[T: Numeric: Fractional]: Aggregation[T, Option[T]] =
-    //TODO: can we write this more simply using map on the count?
-    //TODO: Division by zero
     (sum[T], count) mapN { (theSum, theCount) =>
-      if theCount == 0 then None
-      else Some(theSum / Numeric[T].fromInt(theCount))
+      theCount match {
+        case 0 => None
+        case _ => Some(theSum / Numeric[T].fromInt(theCount))
+      }
     }
 
-  private class PureRun[TIn, TOut](fixedResult: TOut)
-      extends AggregationRun[TIn, TOut]:
-    def consume(element: TIn): AggregationRun[TIn, TOut] = this
-    def result(): TOut = fixedResult
-
-  private class ApRun[TIn, TIntermediate, TOut](
-      left: AggregationRun[TIn, TIntermediate => TOut],
-      right: AggregationRun[TIn, TIntermediate]
-  ) extends AggregationRun[TIn, TOut]:
-    def consume(element: TIn): AggregationRun[TIn, TOut] =
-      ApRun(
-        left.consume(element),
-        right.consume(element)
-      )
-
-    def result(): TOut =
-      left.result()(right.result())
+  final def countOccurencesOf[T]: Aggregation[T, Map[T, Int]] =
+    foldMap(occurence => Map(occurence -> 1))
 
   //TODO: Check if we can write the type lambdas more succinctly
   given [TIn]: Applicative[[TOut] =>> Aggregation[TIn, TOut]] with
@@ -98,16 +84,34 @@ object Aggregation:
         right.start()
       )
 
-  //TODO: Move the classes around a little
-  private class ContraMapRun[TIn, B, TOut](
-      map: TIn => B,
-      innerRun: AggregationRun[B, TOut]
-  ) extends AggregationRun[TIn, TOut]:
-    def consume(element: TIn): AggregationRun[TIn, TOut] =
-      ContraMapRun(map, innerRun.consume(map(element)))
-    def result(): TOut = innerRun.result()
+  private class PureRun[TIn, TOut](fixedResult: TOut) extends Run[TIn, TOut]:
+    def consume(element: TIn): Run[TIn, TOut] = this
+    def result(): TOut = fixedResult
+
+  private class ApRun[TIn, TIntermediate, TOut](
+      left: Run[TIn, TIntermediate => TOut],
+      right: Run[TIn, TIntermediate]
+  ) extends Run[TIn, TOut]:
+    def consume(element: TIn): Run[TIn, TOut] =
+      ApRun(
+        left.consume(element),
+        right.consume(element)
+      )
+
+    def result(): TOut =
+      left.result()(right.result())
 
   given [TOut]: Contravariant[[TIn] =>> Aggregation[TIn, TOut]] with
     def contramap[A, B](mapped: Aggregation[A, TOut])(
         f: B => A
     ): Aggregation[B, TOut] = mapped.contramap(f)
+
+  private class ContramapRun[TIn, B, TOut](
+      map: TIn => B,
+      innerRun: Run[B, TOut]
+  ) extends Run[TIn, TOut]:
+
+    def consume(element: TIn): Run[TIn, TOut] =
+      ContramapRun(map, innerRun.consume(map(element)))
+
+    def result(): TOut = innerRun.result()
