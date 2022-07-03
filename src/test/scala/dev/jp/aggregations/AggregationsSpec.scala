@@ -1,15 +1,16 @@
 package dev.jp.aggregations
 
-import org.scalatest._
-import freespec._
-import matchers.should.Matchers._
-import org.scalactic.TypeCheckedTripleEquals._
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.scalacheck.Gen._
-import org.scalacheck.Arbitrary._
 import cats._
 import cats.implicits._
 import fs2.Stream
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen._
+import org.scalactic.TypeCheckedTripleEquals._
+import org.scalatest._
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import freespec._
+import matchers.should.Matchers._
 
 class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
   import Aggregation._
