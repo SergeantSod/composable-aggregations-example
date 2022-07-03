@@ -69,7 +69,7 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
 
     "aggregates to the mean value for non-empty streams" in {
       forAll { (aVector: Vector[Double]) =>
-        whenever(!aVector.isEmpty) {
+        whenever(aVector.nonEmpty) {
           val expectedMean = aVector.sum / aVector.length
           mean[Double].apply(pureStreamOf(aVector)) should ===(
             Some(expectedMean)
@@ -96,11 +96,27 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
     }
   }
 
-  "contramap" in {
-    val buildVectorFromInts = buildVector.contramap[Int](_.toString())
-    forAll { (aVector: Vector[Int]) =>
-      buildVectorFromInts(pureStreamOf(aVector)) should === {
-        aVector.map(_.toString)
+  "when contramapped over" - {
+
+    def appliesTheMapping(
+        buildVectorFromInts: Aggregation[Int, Vector[String]]
+    ): Unit =
+      "applies the mapping before aggregating" in {
+        forAll { (aVector: Vector[Int]) =>
+          buildVectorFromInts(pureStreamOf(aVector)) should === {
+            aVector.map(_.toString)
+          }
+        }
+      }
+
+    "directly" - {
+      behave like appliesTheMapping(buildVector.contramap[Int](_.toString()))
+    }
+
+    "via the type class" - {
+      behave like appliesTheMapping {
+        Contravariant[[T] =>> Aggregation[T, Vector[String]]]
+          .contramap[String, Int](buildVector)(_.toString)
       }
     }
   }
