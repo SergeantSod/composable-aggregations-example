@@ -17,7 +17,7 @@ trait Aggregation[TIn, TOut]:
   def start(): Run[TIn, TOut]
 
   /** Runs this aggregation over a Stream */
-  def apply[F[_]: Functor](
+  final def apply[F[_]: Functor](
       stream: Stream[F, TIn]
   )(using Compiler[F, F]): F[TOut] =
     stream.compile
@@ -27,7 +27,7 @@ trait Aggregation[TIn, TOut]:
   // We define this here instead of relying on cats' extension methods,
   // because Scala has some trouble deriving those
   // (probably due to the additional type parameter)
-  def contramap[B](
+  final def contramap[B](
       f: B => TIn
   ): Aggregation[B, TOut] = () => Aggregation.ContramapRun(f, start())
 
