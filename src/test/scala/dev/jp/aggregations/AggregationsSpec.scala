@@ -7,8 +7,8 @@ import org.scalactic.TypeCheckedTripleEquals._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
-import cats.Foldable
-import cats.Id
+import cats._
+import cats.implicits._
 import fs2.Stream
 
 class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
@@ -17,11 +17,12 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
   def pureStreamOf[E, C[_]: Foldable](elements: C[E]): Stream[Id, E] =
     Stream.evals[Id, C, E](elements)
 
+  val buildVector: Aggregation[String, Vector[String]] =
+    fold[String, Vector[String]](Vector.empty) { _ :+ _ }
+
   "fold" - {
     "aggregates over stream" in {
-      val buildVector = fold[Int, Vector[Int]](Vector.empty) { _ :+ _ }
-
-      forAll { (aVector: Vector[Int]) =>
+      forAll { (aVector: Vector[String]) =>
         buildVector(pureStreamOf(aVector)) should ===(aVector)
       }
     }
@@ -87,6 +88,32 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
     }
   }
 
-  "countOccurencesOf" in pending
+  "countOccurencesOf" in {
+    forAll { (aVector: Vector[Boolean]) =>
+      countOccurencesOf[Boolean].apply(pureStreamOf(aVector)) should === {
+        aVector.groupBy(identity).map((a, b) => a -> b.length).toMap
+      }
+    }
+  }
 
-  "contramap" in pending
+  "contramap" in {
+    val buildVectorFromInts = buildVector.contramap[Int](_.toString())
+    forAll { (aVector: Vector[Int]) =>
+      buildVectorFromInts(pureStreamOf(aVector)) should === {
+        aVector.map(_.toString)
+      }
+    }
+  }
+
+  "composition" in {
+    val composedAggregation = (buildVector, foldM[String]) mapN {
+      (elements, concatenated) =>
+        elements :+ concatenated
+    }
+
+    forAll { (aVector: Vector[String]) =>
+      composedAggregation(pureStreamOf(aVector)) should ===(
+        aVector :+ aVector.mkString
+      )
+    }
+  }
