@@ -48,7 +48,7 @@ val staffStatistics: Aggregation[Employee, Statistics] = (
   count[Employee],
   sum[Double].contramap[Employee](_.salary),
   mean[Double].contramap[Employee](_.salary),
-  countOccurencesOf[Department].contramap[Employee](_.department)
+  countOccurrencesOf[Department].contramap[Employee](_.department)
 ) mapN Statistics.apply
 
 def parseJsonLinesAs[T: Decoder]: Pipe[IO, Byte, T] =

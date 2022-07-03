@@ -73,8 +73,8 @@ object Aggregation:
       }
     }
 
-  final def countOccurencesOf[T]: Aggregation[T, Map[T, Int]] =
-    foldMap(occurence => Map(occurence -> 1))
+  final def countOccurrencesOf[T]: Aggregation[T, Map[T, Int]] =
+    foldMap(occurrence => Map(occurrence -> 1))
 
   given [TIn]: Applicative[[TOut] =>> Aggregation[TIn, TOut]] with
 

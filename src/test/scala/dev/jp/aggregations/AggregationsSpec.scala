@@ -88,9 +88,9 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
     }
   }
 
-  "countOccurencesOf" in {
+  "countOccurrencesOf" in {
     forAll { (aVector: Vector[Boolean]) =>
-      countOccurencesOf[Boolean].apply(pureStreamOf(aVector)) should === {
+      countOccurrencesOf[Boolean].apply(pureStreamOf(aVector)) should === {
         aVector.groupBy(identity).map((a, b) => a -> b.length).toMap
       }
     }
