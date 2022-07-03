@@ -33,6 +33,7 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
           _.addOne(_)
         }
 
+      //The point here is to prove that elements from the second run don't just get added to the same buffer
       forAll { (aVector: Vector[Int]) =>
         buildBuffer(pureStreamOf(aVector)).toList should ===(
           buildBuffer(pureStreamOf(aVector)).toList
@@ -41,3 +42,51 @@ class AggregationsSpec extends AnyFreeSpec with ScalaCheckDrivenPropertyChecks:
 
     }
   }
+
+  "foldM" in {
+    forAll { (aVector: Vector[String]) =>
+      foldM[String](pureStreamOf(aVector)) should ===(aVector.mkString)
+    }
+  }
+
+  "count" in {
+    forAll { (aVector: Vector[String]) =>
+      count(pureStreamOf(aVector)) should ===(aVector.length)
+    }
+  }
+
+  "sum" in {
+    forAll { (aVector: Vector[Int]) =>
+      sum[Int].apply(pureStreamOf(aVector)) should ===(aVector.sum)
+    }
+  }
+
+  "mean" - {
+    "aggregates no result for empty streams" in {
+      mean[Double].apply(pureStreamOf(List.empty[Double])) should ===(None)
+    }
+
+    "aggregates to the mean value for non-empty streams" in {
+      forAll { (aVector: Vector[Double]) =>
+        whenever(!aVector.isEmpty) {
+          val expectedMean = aVector.sum / aVector.length
+          mean[Double].apply(pureStreamOf(aVector)) should ===(
+            Some(expectedMean)
+          )
+        }
+      }
+    }
+  }
+
+  "foldMap" in {
+    val foldMapToString = foldMap[Int, String](_.toString)
+    forAll { (aVector: Vector[Int]) =>
+      foldMapToString(pureStreamOf(aVector)) should ===(
+        aVector.map(_.toString).mkString
+      )
+    }
+  }
+
+  "countOccurencesOf" in pending
+
+  "contramap" in pending
