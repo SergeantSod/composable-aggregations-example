@@ -76,7 +76,7 @@ object Aggregation:
 object Aggregation:
 ...
   final def mean[T: Fractional]: Aggregation[T, Option[T]] =
-    (sum[T], count) ???
+    (sum[T], count[T]) ???
 ```
 - How to combine multiple `Aggregations` ?
 ---
