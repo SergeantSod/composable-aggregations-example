@@ -24,7 +24,7 @@ trait Aggregation[TIn, TOut]:
 ...
 trait Run[TIn, TOut]:
   def consume(element: TIn): Run[TIn, TOut]
-  def result(): TOut  
+  def result(): TOut
 ```
 ---
 ## How to run it
@@ -111,7 +111,7 @@ trait Applicative[F[_]]:
   def pure[A](x: A): F[A]
 
   def ap[A, B](ff: F[A => B])(fa: F[A]): F[B]
-```  
+```
 ---
 ## What the `ap` ?
 ![WAT](images/Wat.webp)
@@ -198,7 +198,7 @@ object Aggregation:
       )
 
     def result(): TOut =
-      left.result()(right.result())  
+      left.result()(right.result())
 ```
 ---
 ## Let's use this
@@ -266,4 +266,6 @@ In VS Code
     - statistics
 - extracted a re-occuring pattern into a library
 ---
-# That's all, Folks
+## That's all, Folks
+
+https://github.com/SergeantSod/composable-aggregations-example
