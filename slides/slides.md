@@ -206,7 +206,7 @@ object Aggregation:
 object Aggregation:
   ...
   final def mean[T: Fractional]: Aggregation[T, Option[T]] =
-    (sum[T], count) mapN { (theSum, theCount) =>
+    (sum[T], count[T]) mapN { (theSum, theCount) =>
       theCount match {
         case 0 => None
         case _ => Some(theSum / Fractional[T].fromInt(theCount))
@@ -220,6 +220,7 @@ object Aggregation:
   - we'd like to "drill down"
 - we need a functional "adapter" on the input side
 - we can define a contravariant functor
+  - `Contravariant` in cats
 ---
 ## Contravariant (`contramap`)
 ```Scala
